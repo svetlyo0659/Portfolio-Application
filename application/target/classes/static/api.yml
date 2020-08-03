@@ -1,0 +1,294 @@
+openapi: 3.0.1
+
+info:
+  version: '2.0.0'
+  title: Portfolio Application
+  description: |
+    <h2> My portfolio app. </h2>
+  contact:
+    name: Svetoslav Getsov
+    url: 'http://svetoslav-getsov@ext4.codix.eu/jprogrammers/season-1/svetoslav-getsov'
+servers:
+- url: http://localhost:8080/api/v1
+security:
+- basicAuth: []
+
+tags:
+- name: Individual
+  description: 'THERE ARE TWO TYPES OF INDIVIDUALS: Private Entity or Legal Entity'
+- name: Portfolio
+  description: 'THE INDIVIDUAL PORTFOLIO HAS TWO TYPES OF DOCUMENTS : INVOICE or CREDIT NOTE'
+
+paths:
+  '/individual':
+    post:
+      description: Register a new Individual (full name and type)
+      operationId: createIndividual
+      tags: [ Individual ]
+      security:
+      - basicAuth: []
+      parameters:
+      - name: name
+        in: query
+        description: Full name.
+        required: true
+        schema:
+          type: string
+      - name: type
+        in: query
+        description: Private Entity or Legal Entity
+        required: true
+        schema:
+          type: string
+          enum:
+          - Private Entity
+          - Legal Entity
+          default: Private Entity
+      - name: identifier
+        in: query
+        description: Private or Legal Entity Identifier
+        required: true
+        schema:
+          type: string
+      responses:
+        '400':
+          description: This Individual name is already taken.
+        '200':
+          description: The Individual was successfully creted.
+    get:
+      description: Find list of all Inividuals. Sorted by name or type.
+      operationId: getAllIndividuals
+      tags: [ Individual ]
+      security:
+      - basicAuth: []
+      parameters:
+      - name: name
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: type
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - Private Entity
+          - Legal Entity
+      - name: order
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - name
+          - type
+      - name: pageNum
+        in: query
+        required: false
+        schema:
+          type: integer
+      - name: rowsNum
+        in: query
+        required: false
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Returns a list of all Individuals (DTO).
+        '400':
+          description: No individuals found.
+
+    delete:
+      description: Delete Individuals.
+      operationId: deleteIndividual
+      tags: [ Individual ]
+      security:
+      - basicAuth: []
+      parameters:
+      - name: name
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: identifier
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Individual deleted.
+        '400':
+          description: Individual not found.
+
+  '/portfolio':
+    post:
+      description: Adding a document to an Individual's porftolio
+      operationId: addPortfolio
+      tags: [ Portfolio ]
+      security:
+      - basicAuth: []
+      parameters:
+      - name: first_individual
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: first_individual_LEI
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: second_individual
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: second_individual_LEI
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: doc_type
+        in: query
+        required: true
+        schema:
+          type: string
+          enum:
+          - INVOICE
+          - CREDIT NOTE
+      - name: amount
+        in: query
+        required: true
+        schema:
+          type: number
+          minimum: 0.1
+          format: double
+
+      responses:
+        '200':
+          description: Portfolio added.
+        '400':
+          description: Individual not found.
+
+
+  '/portfolio/balance':
+    get:
+      description: Returns the current, date to date & total balance of an individual.
+      operationId: getCurrentBalance
+      tags: [ Portfolio ]
+      security:
+      - basicAuth: []
+      parameters:
+      - name: name
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: lei
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: from_date
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: to_date
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Returns the current, date to date & total balance of an individual.
+        '400':
+          description: Individual not found.
+
+  '/portfolio/getAll':
+    get:
+      description: Returns a list of all portfolios. Can be sorted by name,document type or date.
+      operationId: getAllPortfolios
+      tags: [ Portfolio ]
+      security:
+      - basicAuth: []
+      parameters:
+      - name: name
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: lei
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: doc_type
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - INVOICE
+          - CREDIT NOTE
+      - name: order
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - name
+          - name DESC
+          - doc_type
+          - lei
+          - st_dt
+          - st_dt DESC
+      - name: pageNum
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+      - name: rowsNum
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+      responses:
+        '200':
+          description: Returns the list of portfolios.
+        '400':
+          description: No portfolios found.
+
+  '/portfolio/update':
+    patch:
+      description: Updates the amount in a certain portfolio.
+      operationId: updateAmountInPortfolio
+      tags: [ Portfolio ]
+      security:
+      - basicAuth: []
+      parameters:
+      - name: amount
+        in: query
+        required: true
+        schema:
+          type: number
+          minimum: 0.1
+          format: double
+      - name: st_dt
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Updates the amount in a certain portfolio.
+
+components:
+  securitySchemes:
+    basicAuth:     # <-- arbitrary name for the security scheme
+      type: http
+      scheme: basic
